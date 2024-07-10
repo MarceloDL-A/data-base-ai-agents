@@ -67,37 +67,9 @@ you are not sure of the answer.
 and thorough response using Markdown.
 - **DO NOT MAKE UP AN ANSWER OR USE PRIOR KNOWLEDGE,
 ONLY USE THE RESULTS OF THE CALCULATIONS YOU HAVE DONE**.
-- **ALWAYS**, as part of your "Final Answer", explain how you got
-to the answer on a section that starts with: "\n\nExplanation:\n".
-In the explanation, mention the column names that you used to get
-to the final answer.
+- **ALWAYS**, explain how you got to the answer on a section that starts with: "\n\nExplanation:\n".
+In the explanation, mention the column names that you used to get to the final answer.
 - Provide the final answer in the same language as the question.
-"""
-
-SQL_PROMPT_PREFIX_PT = """
-Primeiro, defina as opções de exibição do pandas para mostrar todas as colunas,
-obtenha os nomes das colunas e, em seguida, responda à pergunta.
-"""
-
-SQL_PROMPT_SUFFIX_PT = """
-- **SEMPRE** antes de dar a Resposta Final, tente outro método.
-Reflita sobre as respostas dos dois métodos que você fez e pergunte a si mesmo
-se responde corretamente à pergunta original.
-Se você não tiver certeza, tente outro método.
-FORMATE 4 DÍGITOS OU MAIS COM VÍRGULAS.
-- Se os métodos tentados não derem o mesmo resultado, reflita e
-tente novamente até ter dois métodos que tenham o mesmo resultado.
-- Se ainda assim não conseguir chegar a um resultado consistente, diga que
-não tem certeza da resposta.
-- Se você tiver certeza da resposta correta, crie uma resposta bonita
-e completa usando Markdown.
-- **NÃO INVENTE UMA RESPOSTA OU USE CONHECIMENTO PRÉVIO,
-USE APENAS OS RESULTADOS DOS CÁLCULOS QUE VOCÊ FEZ**.
-- **SEMPRE**, como parte de sua "Resposta Final", explique como você chegou
-à resposta em uma seção que começa com: "\n\nExplicação:\n".
-Na explicação, mencione os nomes das colunas que você usou para chegar
-à resposta final.
-- Forneça a resposta final no mesmo idioma da pergunta.
 """
 
 # Função que gerencia a conversa com o modelo
@@ -166,26 +138,32 @@ st.write("### Dataset Preview")
 st.write(df.head())
 
 # Detecta o idioma da pergunta para garantir a formatação correta
-question = st.text_input(
+initial_question = st.text_input(
     "Enter your question about the dataset:",
     "What is the total longevity pay for employees with the grade 'M3'?",
     key='initial_question'
 )
-language = detect(question)
 
 # Ajusta a interface de acordo com o idioma detectado
-if language == 'pt':
-    st.write("### Pergunte Algo")
-    button_label = "Executar Consulta"
-    final_answer_label = "### Resposta Final"
-else:
-    st.write("### Ask a Question")
-    button_label = "Run Query"
-    final_answer_label = "### Final Answer"
+language = detect(initial_question)
 
-# Executa a consulta e exibe o resultado
+button_label = "Run Query"
+
 if st.button(button_label):
-    res = run_conversation(question, language)
+    res = run_conversation(initial_question, language)
     
-    st.write(final_answer_label)
-    st.markdown(res.choices[0].message.content)
+    # Divide a resposta em final_answer e explanation se "Explanation:" estiver presente
+    content = res.choices[0].message.content
+    if "\n\nExplanation:" in content:
+        parts = content.split("\n\nExplanation:")
+        final_answer = parts[0]
+        explanation = parts[1] if len(parts) > 1 else ""
+    else:
+        final_answer = content
+        explanation = ""
+
+    # Exibe a resposta e a explicação
+    st.markdown(final_answer)
+    if explanation:
+        st.markdown("### Explanation:")
+        st.markdown(explanation)
