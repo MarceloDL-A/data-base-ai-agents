@@ -49,37 +49,31 @@ df.to_sql("salaries_2023", con=engine, if_exists="replace", index=False)
 
 # Definição dos prompts prefixo e sufixo
 SQL_PROMPT_PREFIX = """
-First set the pandas display options to show all the columns,
-get the column names, then answer the question.
+First, set the pandas display options to show all the columns.
+Then, get the column names and answer the question.
+The answer must be provided in the same language as the question.
+
+Question:
 """
 
 SQL_PROMPT_SUFFIX = """
 - **ALWAYS** before giving the Final Answer, try another method.
-Then reflect on the answers of the two methods you did and ask yourself
-if it answers correctly the original question.
-If you are not sure, try another method.
-FORMAT 4 FIGURES OR MORE WITH COMMAS.
-- If the methods tried do not give the same result, reflect and
-try again until you have two methods that have the same result.
-- If you still cannot arrive to a consistent result, say that
-you are not sure of the answer.
-- If you are sure of the correct answer, create a beautiful
-and thorough response using Markdown.
-- **DO NOT MAKE UP AN ANSWER OR USE PRIOR KNOWLEDGE,
-ONLY USE THE RESULTS OF THE CALCULATIONS YOU HAVE DONE**.
-- **ALWAYS**, explain how you got to the answer on a section that starts with: "\n\nExplanation:\n".
-In the explanation, mention the column names that you used to get to the final answer.
+- Reflect on the answers of the two methods you did and ask yourself if it answers correctly the original question.
+- If you are not sure, try another method.
+- FORMAT 4 FIGURES OR MORE WITH COMMAS.
+- If the methods tried do not give the same result, reflect and try again until you have two methods that have the same result.
+- If you still cannot arrive at a consistent result, say that you are not sure of the answer.
+- If you are sure of the correct answer, create a beautiful and thorough response using Markdown.
+- **DO NOT MAKE UP AN ANSWER OR USE PRIOR KNOWLEDGE, ONLY USE THE RESULTS OF THE CALCULATIONS YOU HAVE DONE**.
+- **ALWAYS**, explain how you got to the answer in a section that starts with: "\n\nExplanation:\n".
+- In the explanation, mention the column names that you used to get to the final answer.
 - Provide the final answer in the same language as the question.
 """
 
 # Função que gerencia a conversa com o modelo
 def run_conversation(query, language):
-    if language == 'pt':
-        prefix = SQL_PROMPT_PREFIX_PT
-        suffix = SQL_PROMPT_SUFFIX_PT
-    else:
-        prefix = SQL_PROMPT_PREFIX
-        suffix = SQL_PROMPT_SUFFIX
+    prefix = SQL_PROMPT_PREFIX
+    suffix = SQL_PROMPT_SUFFIX
 
     # Cria uma lista de mensagens com o prefixo, a consulta e o sufixo
     messages = [{"role": "user", "content": prefix + query + suffix}]
@@ -90,6 +84,9 @@ def run_conversation(query, language):
         messages=messages,
         tools=helpers.tools_sql,
         tool_choice="auto",
+        temperature = 0.2
+
+        
     )
     response_message = response.choices[0].message
 
@@ -127,6 +124,7 @@ def run_conversation(query, language):
             second_response = client.chat.completions.create(
                 model=llm_name,
                 messages=messages,
+                temperature = 0.2
             )
         return second_response
 
