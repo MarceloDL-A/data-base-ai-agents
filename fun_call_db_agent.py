@@ -144,32 +144,43 @@ st.write(df.head())
 
 
 # Função para gerar o resumo do dataset
-def generate_dataset_summary(df):
-    column_summary = df.columns.tolist()
-    description_summary = df.describe()
-    null_counts_summary = df.isnull().sum()
+def generate_dataset_summary(file_url):
+
+
+    df = pd.read_csv(file_url)
+    describe = df.describe(include="all").round(2)
+    nulls = df.isnull().sum()
+    uniques = df.nunique(dropna=False)
     
     summary = f"""
-    **Column Names:** {column_summary}
+    **describe:** {describe}
     
-    **Statistics Overview:**\n
-    {description_summary}
+    **nulls:**\n
+    {nulls}
     
-    **Null Values:**\n
-    {null_counts_summary}
+    **uniques:**\n
+    {uniques}
     """
-    return summary
+
+    colum_names = df.columns
+    return summary, colum_names
 
 # Função para gerar um resumo de alto nível com o GPT
-def generate_high_level_summary(summary = ""):
+def generate_high_level_summary(colum_names, summary = ""):
 
     
     prompt = f"""
-    Based on the following dataset summary, generate a professional high-level overview suitable for business professionals and data scientists:
 
+    summary: 
+    
     {summary}
 
-    Don't use phrases with obvious information for this area. Only mention additional information if it is truly relevant.
+    - Based only on column names {colum_names} explain the most relevant columns very faithfully.
+    - Talk about null data.
+    - Talk about quirks about the data.
+    - Be extremely faithful to the data.
+    - Based on the summary, generate a professional high-level overview suitable for business professionals and data scientists.
+    - Don't use phrases with obvious information for this area. Only mention additional information if it is truly relevant.
     """
     messages = [{"role": "user", "content": prompt}]
     # Chama o modelo com a conversa e as funções disponíveis
@@ -182,8 +193,8 @@ def generate_high_level_summary(summary = ""):
     )
     return response.choices[0].message.content
 
-summary = generate_dataset_summary(df)
-st.write(generate_high_level_summary(summary = ""))
+summary, colum_names = generate_dataset_summary(file_url)
+st.write(generate_high_level_summary(colum_names, summary = ""))
 
 
 # Detecta o idioma da pergunta para garantir a formatação correta
