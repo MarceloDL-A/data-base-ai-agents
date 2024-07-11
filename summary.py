@@ -13,7 +13,7 @@ load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
 
 # Define o modelo de linguagem que será utilizado
-llm_name = "gpt-3.5-turbo"
+llm_name = "gpt-4"
 model = ChatOpenAI(api_key=openai_key, model=llm_name)
 
 # Cria um cliente para chamadas à API do OpenAI

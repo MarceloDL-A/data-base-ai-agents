@@ -14,7 +14,6 @@ from helpers import (
     get_employee_count_by_gender_in_department,
     get_employees_with_overtime_above,
 )
-from langdetect import detect  # Biblioteca para detectar o idioma da pergunta
 
 # Carrega variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -56,13 +55,13 @@ df.to_sql("salaries_2023", con=engine, if_exists="replace", index=False)
 # Definição dos prompts prefixo e sufixo
 SQL_PROMPT_PREFIX = """
 First, set the pandas display options to show all the columns.
-Then, get the column names and answer the question.
-The answer must be provided in the same language as the question.
+Then, get the column names and answer the question. 
 
-Question:
+Input Question:
 """
 
 SQL_PROMPT_SUFFIX = """
+
 - **ALWAYS** before giving the Final Answer, try another method.
 - Reflect on the answers of the two methods you did and ask yourself if it answers correctly the original question.
 - If you are not sure, try another method.
@@ -73,16 +72,19 @@ SQL_PROMPT_SUFFIX = """
 - **DO NOT MAKE UP AN ANSWER OR USE PRIOR KNOWLEDGE, ONLY USE THE RESULTS OF THE CALCULATIONS YOU HAVE DONE**.
 - **ALWAYS**, explain how you got to the answer in a section that starts with: "\n\nExplanation:\n".
 - In the explanation, mention the column names that you used to get to the final answer.
-- Provide the final answer in the same language as the question.
+- **ALWAYS**, provide the answer in the same language as the Input Question.
 """
 
 # Função que gerencia a conversa com o modelo
-def run_conversation(query, language):
+def run_conversation(query):
     prefix = SQL_PROMPT_PREFIX
     suffix = SQL_PROMPT_SUFFIX
 
     # Cria uma lista de mensagens com o prefixo, a consulta e o sufixo
-    messages = [{"role": "user", "content": prefix + query + suffix}]
+    messages = [
+    {"role": "system", "content": "You must respond in the same language as the Input Question."},
+    {"role": "user", "content": prefix + query + suffix}
+]
 
     # Chama o modelo com a conversa e as funções disponíveis
     response = client.chat.completions.create(
@@ -204,13 +206,12 @@ initial_question = st.text_input(
     key='initial_question'
 )
 
-# Ajusta a interface de acordo com o idioma detectado
-language = detect(initial_question)
+
 
 button_label = "Run Query"
 
 if st.button(button_label):
-    res = run_conversation(initial_question, language)
+    res = run_conversation(initial_question)
     
     # Divide a resposta em final_answer e explanation se "Explanation:" estiver presente
     content = res.choices[0].message.content
