@@ -47,6 +47,12 @@ df = pd.read_csv(file_url).fillna(value=0)
 # Transfere os dados do DataFrame para a tabela no banco de dados SQL
 df.to_sql("salaries_2023", con=engine, if_exists="replace", index=False)
 
+
+
+
+
+
+
 # Definição dos prompts prefixo e sufixo
 SQL_PROMPT_PREFIX = """
 First, set the pandas display options to show all the columns.
@@ -84,7 +90,7 @@ def run_conversation(query, language):
         messages=messages,
         tools=helpers.tools_sql,
         tool_choice="auto",
-        temperature = 0.2
+        temperature = 0.5
 
         
     )
@@ -124,7 +130,7 @@ def run_conversation(query, language):
             second_response = client.chat.completions.create(
                 model=llm_name,
                 messages=messages,
-                temperature = 0.2
+                temperature = 0.5
             )
         return second_response
 
@@ -134,6 +140,51 @@ st.title("Database AI Agent with LangChain")
 # Exibe uma prévia do dataset
 st.write("### Dataset Preview")
 st.write(df.head())
+
+
+
+# Função para gerar o resumo do dataset
+def generate_dataset_summary(df):
+    column_summary = df.columns.tolist()
+    description_summary = df.describe()
+    null_counts_summary = df.isnull().sum()
+    
+    summary = f"""
+    **Column Names:** {column_summary}
+    
+    **Statistics Overview:**\n
+    {description_summary}
+    
+    **Null Values:**\n
+    {null_counts_summary}
+    """
+    return summary
+
+# Função para gerar um resumo de alto nível com o GPT
+def generate_high_level_summary(summary = ""):
+
+    
+    prompt = f"""
+    Based on the following dataset summary, generate a professional high-level overview suitable for business professionals and data scientists:
+
+    {summary}
+
+    Don't use phrases with obvious information for this area. Only mention additional information if it is truly relevant.
+    """
+    messages = [{"role": "user", "content": prompt}]
+    # Chama o modelo com a conversa e as funções disponíveis
+    response = client.chat.completions.create(
+        model=llm_name,
+        messages=messages,
+        temperature = 0.5
+
+        
+    )
+    return response.choices[0].message.content
+
+summary = generate_dataset_summary(df)
+st.write(generate_high_level_summary(summary = ""))
+
 
 # Detecta o idioma da pergunta para garantir a formatação correta
 initial_question = st.text_input(
